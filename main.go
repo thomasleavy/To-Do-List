@@ -1,5 +1,5 @@
 //This is a simple To-Do List programme. It was created using Go, HTML and CSS
-//To run the programe, open a terminal and type "go run main.go"
+//To run the programme, open a terminal and type "go run main.go"
 //Once it is running, go to your web browser and copy + paste http://localhost:8080
 //The To-Do List will appear in a web server running on your local machine at port 8080
 
@@ -21,7 +21,6 @@ var (
 
 type Task struct {
 	Description string
-	ImageURL    string
 	Completed   bool
 }
 
@@ -123,7 +122,7 @@ var tmpl = template.Must(template.New("index").Parse(`
             <input type="text" name="search" placeholder="Search...">
             <button type="submit">Search</button>
         </form>
-        <ul>
+        <ul id="task-list">
             {{range $index, $task := .}}
             <li>
                 <span class="task-text">{{$task.Description}}</span>
@@ -147,7 +146,9 @@ var tmpl = template.Must(template.New("index").Parse(`
                 return response.json();
             })
             .then(data => {
-                // Task deleted successfully, update UI if necessary
+                if (data.message === 'Task deleted successfully') {
+                    location.reload(); // Reload the page to reflect the changes
+                }
             })
             .catch(error => {
                 console.error('There was a problem with your fetch operation:', error);
@@ -185,7 +186,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		mu.Lock()
 		defer mu.Unlock()
-		todoList = append(todoList, Task{Description: r.FormValue("task"), ImageURL: "", Completed: false})
+		todoList = append(todoList, Task{Description: r.FormValue("task"), Completed: false})
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -203,7 +204,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	//Respond with error message
+	// Respond with error message
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request"})
